@@ -1,0 +1,349 @@
+[gd_scene load_steps=5 format=3 uid="uid://pi2okcs0hc1k"]
+
+[ext_resource type="Script" path="res://addons/BF_machine/interpreter/interpreter.gd" id="1_d3va5"]
+[ext_resource type="Script" path="res://addons/BF_machine/scripts/BF_machine.gd" id="2_dmgsr"]
+[ext_resource type="LabelSettings" uid="uid://ciovlbc20jjl6" path="res://addons/BF_machine/interpreter/labelsettings.tres" id="3_181j4"]
+
+[sub_resource type="Resource" id="Resource_5du1o"]
+script = ExtResource("2_dmgsr")
+dialect = {
+0: ">",
+1: "<",
+2: "+",
+3: "-",
+4: ".",
+5: ",",
+6: "[",
+7: "]"
+}
+program = ""
+cell_default_value = 0
+tape_length_max = -1
+wrap_cell_pointer = true
+pause_on_output = false
+clear_previous_output = false
+exceptions_in_engine = true
+exception_on_unclosed_loop = true
+exception_on_infinite_loop = true
+recursion_timeout_count_max = -1
+tape = [0]
+last_exception_encountered = 0
+loop_level = 0
+recursion_timeout_count = 0
+output = []
+output_as_string = ""
+finished = false
+paused = false
+exception_encountered = false
+tape_pointer = 0
+program_pointer = 0
+
+[node name="Interpreter" type="VBoxContainer" node_paths=PackedStringArray("program_box", "tape_box", "output_box", "output_as_string_box", "input_box", "current_error_code", "paused_check", "finished_check", "reset_button", "reset_program_button", "input_button", "run_button", "bypass_error_button")]
+custom_minimum_size = Vector2(0, 200)
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+script = ExtResource("1_d3va5")
+current_machine = SubResource("Resource_5du1o")
+preset_program = "[
+  THE FOLLOWING IS FROM \"https://en.wikipedia.org/wiki/Brainfuck?useskin=vector#Hello_World!\"
+  All credit to the following code and it comments goes to this resource!
+]
+
+[ 
+  This program prints \"Hello World!\" and a newline to the screen; its
+  length is 106 active command characters. [It is not the shortest.]
+
+  This loop is an \"initial comment loop\", a simple way of adding a comment
+  to a BF program such that you don't have to worry about any command
+  characters. Any \".\", \",\", \"+\", \"-\", \"<\" and \">\" characters are simply
+  ignored, the \"[\" and \"]\" characters just have to be balanced. This
+  loop and the commands it contains are ignored because the current cell
+  defaults to a value of 0; the 0 value causes this loop to be skipped.
+]
+
+++++++++         Set Cell #0 to 8
+[
+    >++++            Add 4 to Cell #1; this will always set Cell #1 to 4
+    [                      as the cell will be cleared by the loop
+        >++            Add 2 to Cell #2
+        >+++          Add 3 to Cell #3
+        >+++          Add 3 to Cell #4
+        >+              Add 1 to Cell #5
+        <<<<-        Decrement the loop counter in Cell #1
+    ]                     Loop until Cell #1 is zero; number of iterations is 4
+    >+                  Add 1 to Cell #2
+    >+                  Add 1 to Cell #3
+    >-                   Subtract 1 from Cell #4
+    >>+               Add 1 to Cell #6
+    [<]                 Move back to the first zero cell you find; this will
+                          be Cell #1 which was cleared by the previous loop
+    <-                  Decrement the loop Counter in Cell #0
+]                        Loop until Cell #0 is zero; number of iterations is 8
+
+The result of this is:
+Cell no :      0   1   2     3     4    5    6
+Contents:   0   0  72 104  88  32   8
+Pointer :     ^
+
+>>.                           Cell #2 has value 72 which is 'H'
+>---.                         Subtract 3 from Cell #3 to get 101 which is 'e'
++++++++..+++.       Likewise for 'llo' from Cell #3
+>>.                           Cell #5 is 32 for the space
+<-.                            Subtract 1 from Cell #4 for 87 to give a 'W'
+<.                             Cell #3 was set to 'o' from the end of 'Hello'
++++.------.--------.     Cell #3 for 'rl' and 'd'
+>>+.                        Add 1 to Cell #5 gives us an exclamation point
+>++.                        And finally a newline from Cell #6"
+program_box = NodePath("_VBC/_HBC/Program/Program")
+tape_box = NodePath("_VBC/Outputs/Tape")
+output_box = NodePath("_VBC/Outputs/Output")
+output_as_string_box = NodePath("_VBC/Outputs/OutputString")
+input_box = NodePath("_VBC/_HBC/States/Input/Input")
+current_error_code = NodePath("_VBC/_HBC/States/Error/LatestErrorCode")
+paused_check = NodePath("_VBC/_HBC/States/Paused")
+finished_check = NodePath("_VBC/_HBC/States/Finished")
+reset_button = NodePath("_VBC/_HBC/States/ResetButton")
+reset_program_button = NodePath("_VBC/_HBC/States/ResetProgramButton")
+input_button = NodePath("_VBC/_HBC/States/Input/InputButton")
+run_button = NodePath("_VBC/_HBC/States/RunButton")
+bypass_error_button = NodePath("_VBC/_HBC/States/Error/BypassErrorButton")
+
+[node name="Title" type="Label" parent="."]
+layout_mode = 2
+text = "BF Interpreter"
+label_settings = ExtResource("3_181j4")
+horizontal_alignment = 1
+uppercase = true
+
+[node name="_HS" type="HSeparator" parent="."]
+layout_mode = 2
+
+[node name="_VBC" type="VBoxContainer" parent="."]
+custom_minimum_size = Vector2(0, 200)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="_HBC" type="HBoxContainer" parent="_VBC"]
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_stretch_ratio = 3.0
+
+[node name="Program" type="VBoxContainer" parent="_VBC/_HBC"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 5.0
+
+[node name="_L1" type="Label" parent="_VBC/_HBC/Program"]
+layout_mode = 2
+size_flags_vertical = 0
+text = "Program:"
+label_settings = ExtResource("3_181j4")
+
+[node name="Program" type="CodeEdit" parent="_VBC/_HBC/Program"]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+text = "[
+  THE FOLLOWING IS FROM \"https://en.wikipedia.org/wiki/Brainfuck?useskin=vector#Hello_World!\"
+  All credit to the following code and it comments goes to this resource!
+]
+
+[ 
+  This program prints \"Hello World!\" and a newline to the screen; its
+  length is 106 active command characters. [It is not the shortest.]
+
+  This loop is an \"initial comment loop\", a simple way of adding a comment
+  to a BF program such that you don't have to worry about any command
+  characters. Any \".\", \",\", \"+\", \"-\", \"<\" and \">\" characters are simply
+  ignored, the \"[\" and \"]\" characters just have to be balanced. This
+  loop and the commands it contains are ignored because the current cell
+  defaults to a value of 0; the 0 value causes this loop to be skipped.
+]
+
+++++++++         Set Cell #0 to 8
+[
+    >++++            Add 4 to Cell #1; this will always set Cell #1 to 4
+    [                      as the cell will be cleared by the loop
+        >++            Add 2 to Cell #2
+        >+++          Add 3 to Cell #3
+        >+++          Add 3 to Cell #4
+        >+              Add 1 to Cell #5
+        <<<<-        Decrement the loop counter in Cell #1
+    ]                     Loop until Cell #1 is zero; number of iterations is 4
+    >+                  Add 1 to Cell #2
+    >+                  Add 1 to Cell #3
+    >-                   Subtract 1 from Cell #4
+    >>+               Add 1 to Cell #6
+    [<]                 Move back to the first zero cell you find; this will
+                          be Cell #1 which was cleared by the previous loop
+    <-                  Decrement the loop Counter in Cell #0
+]                        Loop until Cell #0 is zero; number of iterations is 8
+
+The result of this is:
+Cell no :      0   1   2     3     4    5    6
+Contents:   0   0  72 104  88  32   8
+Pointer :     ^
+
+>>.                           Cell #2 has value 72 which is 'H'
+>---.                         Subtract 3 from Cell #3 to get 101 which is 'e'
++++++++..+++.       Likewise for 'llo' from Cell #3
+>>.                           Cell #5 is 32 for the space
+<-.                            Subtract 1 from Cell #4 for 87 to give a 'W'
+<.                             Cell #3 was set to 'o' from the end of 'Hello'
++++.------.--------.     Cell #3 for 'rl' and 'd'
+>>+.                        Add 1 to Cell #5 gives us an exclamation point
+>++.                        And finally a newline from Cell #6"
+placeholder_text = "Program goes here..."
+scroll_smooth = true
+scroll_past_end_of_file = true
+minimap_draw = true
+minimap_width = 60
+caret_blink = true
+caret_blink_interval = 1.0
+highlight_all_occurrences = true
+highlight_current_line = true
+draw_tabs = true
+line_folding = true
+line_length_guidelines = Array[int]([84])
+indent_size = 3
+indent_use_spaces = true
+indent_automatic = true
+auto_brace_completion_enabled = true
+auto_brace_completion_highlight_matching = true
+
+[node name="_VS" type="VSeparator" parent="_VBC/_HBC"]
+layout_mode = 2
+
+[node name="States" type="VBoxContainer" parent="_VBC/_HBC"]
+layout_mode = 2
+size_flags_horizontal = 3
+alignment = 1
+
+[node name="Input" type="HBoxContainer" parent="_VBC/_HBC/States"]
+layout_mode = 2
+
+[node name="_L5" type="Label" parent="_VBC/_HBC/States/Input"]
+layout_mode = 2
+text = "Input: "
+label_settings = ExtResource("3_181j4")
+
+[node name="Input" type="SpinBox" parent="_VBC/_HBC/States/Input"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 4.0
+editable = false
+select_all_on_focus = true
+
+[node name="InputButton" type="Button" parent="_VBC/_HBC/States/Input"]
+layout_mode = 2
+size_flags_horizontal = 3
+disabled = true
+text = "Input"
+
+[node name="Error" type="HBoxContainer" parent="_VBC/_HBC/States"]
+layout_mode = 2
+
+[node name="_L6" type="Label" parent="_VBC/_HBC/States/Error"]
+layout_mode = 2
+text = "Last Error:"
+label_settings = ExtResource("3_181j4")
+
+[node name="LatestErrorCode" type="SpinBox" parent="_VBC/_HBC/States/Error"]
+layout_mode = 2
+size_flags_stretch_ratio = 4.0
+editable = false
+select_all_on_focus = true
+
+[node name="BypassErrorButton" type="Button" parent="_VBC/_HBC/States/Error"]
+layout_mode = 2
+disabled = true
+text = "Bypass Error"
+
+[node name="RunButton" type="Button" parent="_VBC/_HBC/States"]
+layout_mode = 2
+text = "Run"
+
+[node name="Paused" type="CheckBox" parent="_VBC/_HBC/States"]
+layout_mode = 2
+text = "Paused"
+icon_alignment = 1
+
+[node name="Finished" type="CheckBox" parent="_VBC/_HBC/States"]
+layout_mode = 2
+disabled = true
+text = "Finished"
+icon_alignment = 1
+
+[node name="ResetButton" type="Button" parent="_VBC/_HBC/States"]
+layout_mode = 2
+disabled = true
+text = "Reset State"
+
+[node name="ResetProgramButton" type="Button" parent="_VBC/_HBC/States"]
+layout_mode = 2
+text = "Reset Program"
+
+[node name="_HS" type="HSeparator" parent="_VBC"]
+layout_mode = 2
+
+[node name="Outputs" type="VBoxContainer" parent="_VBC"]
+custom_minimum_size = Vector2(0, 100)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="_L2" type="Label" parent="_VBC/Outputs"]
+layout_mode = 2
+size_flags_vertical = 0
+text = "Tape:"
+label_settings = ExtResource("3_181j4")
+
+[node name="Tape" type="LineEdit" parent="_VBC/Outputs"]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+size_flags_vertical = 3
+text = "[0]"
+editable = false
+virtual_keyboard_enabled = false
+shortcut_keys_enabled = false
+middle_mouse_paste_enabled = false
+select_all_on_focus = true
+
+[node name="_L3" type="Label" parent="_VBC/Outputs"]
+layout_mode = 2
+size_flags_vertical = 0
+text = "Direct Output:"
+label_settings = ExtResource("3_181j4")
+
+[node name="Output" type="LineEdit" parent="_VBC/Outputs"]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+size_flags_vertical = 3
+text = "[]"
+editable = false
+virtual_keyboard_enabled = false
+shortcut_keys_enabled = false
+middle_mouse_paste_enabled = false
+select_all_on_focus = true
+
+[node name="_L4" type="Label" parent="_VBC/Outputs"]
+layout_mode = 2
+size_flags_vertical = 0
+text = "String Output:"
+label_settings = ExtResource("3_181j4")
+
+[node name="OutputString" type="LineEdit" parent="_VBC/Outputs"]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+size_flags_vertical = 3
+editable = false
+virtual_keyboard_enabled = false
+shortcut_keys_enabled = false
+middle_mouse_paste_enabled = false
+draw_control_chars = true
+select_all_on_focus = true

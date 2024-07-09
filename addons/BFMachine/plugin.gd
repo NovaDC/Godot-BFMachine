@@ -1,7 +1,8 @@
 @tool
+@icon("res://addons/BFMachine/assets/BFMachine.svg")
 extends EditorPlugin
 
-const INTERPRETER_SCENE_REF = preload("res://addons/BF_machine/interpreter/interpreter.tscn")
+const INTERPRETER_SCENE_REF = preload("res://addons/BFMachine/interpreter/BFInterpreter.tscn")
 var current_interpreter:BFInterpreter = null
 var is_added:bool = false
 

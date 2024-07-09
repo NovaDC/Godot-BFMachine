@@ -10,14 +10,14 @@ config_version=5
 
 [application]
 
-config/name="BrainFuck"
+config/name="BF"
 config/tags=PackedStringArray("inprogress", "tool")
-run/main_scene="res://addons/BF_machine/interpreter/interpreter.tscn"
+run/main_scene="res://addons/BFMachine/interpreter/BFInterpreter.tscn"
 config/features=PackedStringArray("4.2", "GL Compatibility")
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/BF_machine/plugin.cfg")
+enabled=PackedStringArray("res://addons/BFMachine/plugin.cfg")
 
 [rendering]
 

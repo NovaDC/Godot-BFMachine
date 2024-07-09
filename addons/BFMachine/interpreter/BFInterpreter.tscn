@@ -1,11 +1,11 @@
 [gd_scene load_steps=5 format=3 uid="uid://pi2okcs0hc1k"]
 
-[ext_resource type="Script" path="res://addons/BF_machine/interpreter/interpreter.gd" id="1_d3va5"]
-[ext_resource type="Script" path="res://addons/BF_machine/scripts/BF_machine.gd" id="2_dmgsr"]
-[ext_resource type="LabelSettings" uid="uid://ciovlbc20jjl6" path="res://addons/BF_machine/interpreter/labelsettings.tres" id="3_181j4"]
+[ext_resource type="Script" path="res://addons/BFMachine/interpreter/BFInterpreter.gd" id="1_plq06"]
+[ext_resource type="Script" path="res://addons/BFMachine/scripts/BFMachine.gd" id="2_up13t"]
+[ext_resource type="LabelSettings" uid="uid://ciovlbc20jjl6" path="res://addons/BFMachine/interpreter/labelsettings.tres" id="3_07a1q"]
 
-[sub_resource type="Resource" id="Resource_5du1o"]
-script = ExtResource("2_dmgsr")
+[sub_resource type="Resource" id="Resource_qcw7f"]
+script = ExtResource("2_up13t")
 dialect = {
 0: ">",
 1: "<",
@@ -25,8 +25,8 @@ clear_previous_output = false
 exceptions_in_engine = true
 exception_on_unclosed_loop = true
 exception_on_infinite_loop = true
-recursion_timeout_count_max = -1
-tape = [0]
+recursion_timeout_count_max = 65535
+tape = []
 last_exception_encountered = 0
 loop_level = 0
 recursion_timeout_count = 0
@@ -38,7 +38,7 @@ exception_encountered = false
 tape_pointer = 0
 program_pointer = 0
 
-[node name="Interpreter" type="VBoxContainer" node_paths=PackedStringArray("program_box", "tape_box", "output_box", "output_as_string_box", "input_box", "current_error_code", "paused_check", "finished_check", "reset_button", "reset_program_button", "input_button", "run_button", "bypass_error_button")]
+[node name="BFInterpreter" type="VBoxContainer" node_paths=PackedStringArray("_program_box", "_tape_box", "_output_box", "_output_as_string_box", "_input_box", "_current_error_code", "_paused_check", "_finished_check", "_reset_button", "_reset_program_button", "_input_button", "_run_button", "_bypass_error_button")]
 custom_minimum_size = Vector2(0, 200)
 anchors_preset = 15
 anchor_right = 1.0
@@ -47,11 +47,10 @@ grow_horizontal = 2
 grow_vertical = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-script = ExtResource("1_d3va5")
-current_machine = SubResource("Resource_5du1o")
+script = ExtResource("1_plq06")
 preset_program = "[
   THE FOLLOWING IS FROM \"https://en.wikipedia.org/wiki/Brainfuck?useskin=vector#Hello_World!\"
-  All credit to the following code and it comments goes to this resource!
+  All credit to the following code and it comments goes to that resource!
 ]
 
 [ 
@@ -99,24 +98,25 @@ Pointer :     ^
 +++.------.--------.     Cell #3 for 'rl' and 'd'
 >>+.                        Add 1 to Cell #5 gives us an exclamation point
 >++.                        And finally a newline from Cell #6"
-program_box = NodePath("_VBC/_HBC/Program/Program")
-tape_box = NodePath("_VBC/Outputs/Tape")
-output_box = NodePath("_VBC/Outputs/Output")
-output_as_string_box = NodePath("_VBC/Outputs/OutputString")
-input_box = NodePath("_VBC/_HBC/States/Input/Input")
-current_error_code = NodePath("_VBC/_HBC/States/Error/LatestErrorCode")
-paused_check = NodePath("_VBC/_HBC/States/Paused")
-finished_check = NodePath("_VBC/_HBC/States/Finished")
-reset_button = NodePath("_VBC/_HBC/States/ResetButton")
-reset_program_button = NodePath("_VBC/_HBC/States/ResetProgramButton")
-input_button = NodePath("_VBC/_HBC/States/Input/InputButton")
-run_button = NodePath("_VBC/_HBC/States/RunButton")
-bypass_error_button = NodePath("_VBC/_HBC/States/Error/BypassErrorButton")
+_current_machine = SubResource("Resource_qcw7f")
+_program_box = NodePath("_VBC/_HBC/Program/Program")
+_tape_box = NodePath("_VBC/Outputs/Tape")
+_output_box = NodePath("_VBC/Outputs/Output")
+_output_as_string_box = NodePath("_VBC/Outputs/OutputString")
+_input_box = NodePath("_VBC/_HBC/States/Input/Input")
+_current_error_code = NodePath("_VBC/_HBC/States/Error/LatestErrorCode")
+_paused_check = NodePath("_VBC/_HBC/States/Paused")
+_finished_check = NodePath("_VBC/_HBC/States/Finished")
+_reset_button = NodePath("_VBC/_HBC/States/ResetButton")
+_reset_program_button = NodePath("_VBC/_HBC/States/ResetProgramButton")
+_input_button = NodePath("_VBC/_HBC/States/Input/InputButton")
+_run_button = NodePath("_VBC/_HBC/States/RunButton")
+_bypass_error_button = NodePath("_VBC/_HBC/States/Error/BypassErrorButton")
 
 [node name="Title" type="Label" parent="."]
 layout_mode = 2
 text = "BF Interpreter"
-label_settings = ExtResource("3_181j4")
+label_settings = ExtResource("3_07a1q")
 horizontal_alignment = 1
 uppercase = true
 
@@ -142,7 +142,7 @@ size_flags_stretch_ratio = 5.0
 layout_mode = 2
 size_flags_vertical = 0
 text = "Program:"
-label_settings = ExtResource("3_181j4")
+label_settings = ExtResource("3_07a1q")
 
 [node name="Program" type="CodeEdit" parent="_VBC/_HBC/Program"]
 custom_minimum_size = Vector2(0, 30)
@@ -151,7 +151,7 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 text = "[
   THE FOLLOWING IS FROM \"https://en.wikipedia.org/wiki/Brainfuck?useskin=vector#Hello_World!\"
-  All credit to the following code and it comments goes to this resource!
+  All credit to the following code and it comments goes to that resource!
 ]
 
 [ 
@@ -231,7 +231,7 @@ layout_mode = 2
 [node name="_L5" type="Label" parent="_VBC/_HBC/States/Input"]
 layout_mode = 2
 text = "Input: "
-label_settings = ExtResource("3_181j4")
+label_settings = ExtResource("3_07a1q")
 
 [node name="Input" type="SpinBox" parent="_VBC/_HBC/States/Input"]
 layout_mode = 2
@@ -252,7 +252,7 @@ layout_mode = 2
 [node name="_L6" type="Label" parent="_VBC/_HBC/States/Error"]
 layout_mode = 2
 text = "Last Error:"
-label_settings = ExtResource("3_181j4")
+label_settings = ExtResource("3_07a1q")
 
 [node name="LatestErrorCode" type="SpinBox" parent="_VBC/_HBC/States/Error"]
 layout_mode = 2
@@ -301,13 +301,13 @@ size_flags_vertical = 3
 layout_mode = 2
 size_flags_vertical = 0
 text = "Tape:"
-label_settings = ExtResource("3_181j4")
+label_settings = ExtResource("3_07a1q")
 
 [node name="Tape" type="LineEdit" parent="_VBC/Outputs"]
 custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
 size_flags_vertical = 3
-text = "[0]"
+text = "[]"
 editable = false
 virtual_keyboard_enabled = false
 shortcut_keys_enabled = false
@@ -318,7 +318,7 @@ select_all_on_focus = true
 layout_mode = 2
 size_flags_vertical = 0
 text = "Direct Output:"
-label_settings = ExtResource("3_181j4")
+label_settings = ExtResource("3_07a1q")
 
 [node name="Output" type="LineEdit" parent="_VBC/Outputs"]
 custom_minimum_size = Vector2(0, 30)
@@ -335,7 +335,7 @@ select_all_on_focus = true
 layout_mode = 2
 size_flags_vertical = 0
 text = "String Output:"
-label_settings = ExtResource("3_181j4")
+label_settings = ExtResource("3_07a1q")
 
 [node name="OutputString" type="LineEdit" parent="_VBC/Outputs"]
 custom_minimum_size = Vector2(0, 30)

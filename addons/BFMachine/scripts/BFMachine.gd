@@ -30,7 +30,15 @@ enum BFOpcodes {
 	SLOOP,
 	## End LOOP. When the currently pointed cell is not 0, return the program to the matching SLOOP.
 	## This loop must be enclosed in a SLOOP at the beginning and a ELOOP at the end.
-	ELOOP
+	ELOOP,
+
+	## [b]A semi standard instruction.[/b] This will print out the current cells value to godot directly, instead of sending events like the [OUTPUT] opcode
+	DEBUG,
+	## [b]A non standard instruction.[/b] This will prematurely end the program
+	## when run.
+	HALT,
+	## [b]A non standard instruction.[/b] This will raise an assertion [enum BFErrors].
+	FAIL,
 }
 
 ## Enumeration defining BF error codes.
@@ -45,7 +53,9 @@ enum BFErrors {
 	## The tape pointer is outside of the bounds of the tape itself.
 	TAPE_POINTER_OUT_OF_RANGE,
 	## Raised when the amount of times an instruction in a loop was called surpasses the limit set
-	RECURSION_TIMEOUT
+	RECURSION_TIMEOUT,
+	## Raised specifically when [constant BFOpcodes.FAIL] is run.
+	INSTRUCTED_FAILURE
 }
 
 ## The official [member dialect] mapping of the language
@@ -102,8 +112,10 @@ signal stepped
 ## otherwise a [constant TAPE_POINTER_OUT_OF_RANGE] BF error will be thrown
 ## when the [member tape_pointer] exceeds the tape length.
 @export var wrap_cell_pointer := true
-## Settings related the machine's output.
+## The amount of cells to print (boht before and after) the current cell when debuging.
+@export var debug_print_cell_count := 3
 #region Output
+## Settings related the machine's output.
 @export_subgroup("Output")
 ## Pause the machine when an [member output] is made.
 @export var pause_on_output := false
@@ -299,8 +311,17 @@ func dec_instruction():
 func interpret_instruction(opcode:BFOpcodes, step_pointer := false):
 	if tape.size() <= 0:
 		tape = [cell_default_value]
-	
+
 	match(opcode):
+		BFOpcodes.HALT:
+			finish()
+			if step_pointer: inc_instruction()
+		BFOpcodes.FAIL:
+			raise_BF_error(BFErrors.INSTRUCTED_FAILURE)
+			if step_pointer: inc_instruction()
+		BFOpcodes.DEBUG:
+			print(tape[tape_pointer])
+			if step_pointer: inc_instruction()
 		BFOpcodes.TRIGHT:
 			tape_pointer += 1
 			if step_pointer: inc_instruction()
@@ -373,6 +394,10 @@ func interpret_instruction(opcode:BFOpcodes, step_pointer := false):
 	else:
 		recursion_timeout_count = 0
 
+func finish():
+	finished = true
+	program_finished.emit()
+
 ## Steps through the [member program] once.
 ## Returns true if the [member program] is halted before or after this step was executed.
 func interpret_step() -> bool:
@@ -383,8 +408,7 @@ func interpret_step() -> bool:
 	stepped.emit() #Emit the stepped signal after each program step
 	
 	if program_pointer >= program.length() and not exception_encountered:
-		finished = true
-		program_finished.emit()
+		finish()
 		return true
 	
 	return exception_encountered or paused

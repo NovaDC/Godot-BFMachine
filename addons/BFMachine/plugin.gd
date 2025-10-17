@@ -3,18 +3,25 @@
 extends EditorPlugin
 
 const INTERPRETER_SCENE_REF = preload("res://addons/BFMachine/interpreter/BFInterpreter.tscn")
-var current_interpreter:BFInterpreter = null
-var is_added:bool = false
+var current_interpreter: BFInterpreter = null
+var is_added: bool = false
+var loader: BFProgramLoader = null
 
 func add_control():
 	if not is_added:
 		add_control_to_bottom_panel(current_interpreter, "BF Interpreter")
 		is_added = true
+	if loader == null:
+		loader = BFProgramLoader.new()
+		add_import_plugin(loader)
 
 func remove_control():
 	if is_added:
 		remove_control_from_bottom_panel(current_interpreter)
 		is_added = false
+	if loader != null:
+		remove_import_plugin(loader)
+		loader = null
 
 func _enter_tree():
 	if current_interpreter == null:

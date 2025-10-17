@@ -209,6 +209,206 @@ signal stepped
 #endregion Pointers
 #endregion State
 
+# Used to normalize a file kind of paramiter into either a [FileAccess] object
+# a [Error] value if nnot possible or an error was encountered.
+# This will also ensure that provided [FileAccess] instances are always [method FileAccess.seek]ed
+# to the start of the file.
+# with errors form this process also being returned if this fails.
+static func _simple_open(ref: Variant) -> Variant:
+	if typeof(ref) == TYPE_OBJECT:
+		ref = ref as FileAccess
+		if ref == null:
+			return ERR_INVALID_PARAMETER
+		if not ref.is_open():
+			return ERR_CANT_OPEN
+		#seek back to the start and also refresh the last stored error
+		ref.seek(0)
+		if ref.get_error() != OK:
+			return ref.get_error()
+		return ref
+	if typeof(ref) in [TYPE_STRING, TYPE_STRING_NAME]:
+		if not FileAccess.file_exists(ref):
+			return ERR_FILE_NOT_FOUND
+
+		var fileobj = FileAccess.open(ref, FileAccess.READ)
+		if fileobj == null:
+			if Engine.get_singleton("FileAccess").has_method("get_open_error"):
+				return Engine.get_singleton("FileAccess").call("get_open_error")
+			if fileobj.get_error() != OK:
+				return fileobj.get_error()
+			return FAILED
+		return fileobj
+
+
+	return ERR_INVALID_PARAMETER
+func load_tape_csv_file(file: Variant,
+						delim := ",",
+						line_index_start: int = 0,
+						line_index_end: int = -1,
+						decode_str: Callable = str_to_var
+						) -> int:
+	var fileobj = _simple_open(file)
+	if typeof(fileobj) == TYPE_INT:
+		return fileobj
+	fileobj = fileobj as FileAccess
+
+	var loaded := PackedStringArray()
+
+	var line_index: int = 0
+	if line_index_start > 0:
+		# then its faster to discard parsed lines then store them all just to be sliced away later on
+		while fileobj.get_position() < fileobj.get_length() and line_index < line_index_start:
+			fileobj.get_line()
+			if fileobj.get_error() != OK:
+				return fileobj.get_error()
+			line_index += 1
+	while (fileobj.get_position() < fileobj.get_length() and
+			(line_index_end < 0 or line_index < line_index_end)
+			):
+		var line := PackedStringArray()
+		if not delim.is_empty():
+			line = fileobj.get_csv_line(delim)
+		else:
+			line = fileobj.get_line()
+		if fileobj.get_error() != OK:
+			return fileobj.get_error()
+		loaded.append_array(line)
+		line_index += 1
+	if line_index_start < 0 or line_index_end < 0:
+		if line_index_start > 0:
+			# then we already pre-sliced these, so the end and start need to be offset by the
+			# pre-sliced line count (which is the exact value already in line_index_start)
+			line_index_end -= sign(line_index_end) * line_index_start
+			line_index_start = 0
+		loaded = loaded.slice(line_index_start, line_index_end)
+
+	tape = Array(loaded).map(decode_str)
+	return OK
+
+func load_tape_binary_file(file: Variant,
+							bit_size: int = 0,
+							floating := false,
+							signed := false,
+							start_index: int = 0,
+							end_index: int = -1
+							) -> int:
+	var fileobj = _simple_open(file)
+	if typeof(fileobj) == TYPE_INT:
+		return fileobj
+	fileobj = fileobj as FileAccess
+
+	# [FileAccess] doesn't have getting methods that decern signed and unsigned
+	# int types for every int size
+	# unlike a PackedByteArray, so lets just pass the files content through
+	var bin:PackedByteArray = fileobj.get_buffer(fileobj.get_length())
+	if fileobj.get_error() != OK:
+		return fileobj.get_error()
+
+	return load_tape_raw_bytes(bin, bit_size, floating, signed, start_index, end_index)
+
+
+func load_tape_raw_bytes(bytes: PackedByteArray,
+							bit_size: int = 0,
+							floating := false,
+							signed := false,
+							start_index: int = 0,
+							end_index: int = -1
+							) -> int:
+	bytes = bytes.slice(start_index, end_index)
+
+	if not signed and floating:
+		# godot (an most engines) don't support unsigned floats
+		return ERR_METHOD_NOT_FOUND
+
+	var method_name:StringName = ""
+	if bit_size < 0:
+		return ERR_PARAMETER_RANGE_ERROR
+	elif bit_size == 0:
+		method_name = "decode_real" if floating else "get"
+	else:
+		if not floating:
+			method_name = "decode_{0}{1}".format(["s" if signed else "u", bit_size])
+			if not ClassDB.class_has_method("PackedByteArray", method_name, false):
+				if bit_size == 8:
+					# we know that 8 bit unsigned values are also always given by the getter for byte arrays...
+					method_name = "get"
+				else:
+					method_name = ""
+		else:
+			const BIT_SIZE_TO_NAME := {
+				16: "half",
+				32: "float",
+				64: "double",
+			}
+			if bit_size in BIT_SIZE_TO_NAME.keys():
+				method_name = "decode_{0}".format([BIT_SIZE_TO_NAME[bit_size]])
+				if not ClassDB.class_has_method("PackedByteArray", method_name, false):
+					method_name = ""
+
+	if method_name.is_empty():
+		return ERR_METHOD_NOT_FOUND
+
+	var offset:int = 0
+	var method := Callable.create(bytes, method_name)
+
+	var byte_size:int = maxi(floori(bit_size/8), 1)
+
+	if bytes.size() % byte_size != 0:
+		return ERR_PARAMETER_RANGE_ERROR
+
+	tape = []
+	while offset < bytes.size():
+		tape.append(method.call(offset))
+		offset += byte_size
+
+	return OK
+
+func load_program_file(file: Variant, skip_cr := false) -> int:
+	file = _simple_open(file)
+	if typeof(file) == TYPE_INT:
+		return file
+	file = file as FileAccess
+
+	var content:String = file.get_as_text(skip_cr)
+	if file.get_error() != OK:
+		return file.get_error()
+
+	program = content
+	return OK
+
+
+func reset_machine_states():
+	tape = []
+	last_exception_encountered = BFErrors.NON_ERROR
+	loop_level = 0
+	recursion_timeout_count = 0
+	output = []
+	finished = false
+	paused = false
+	exception_encountered = false
+	tape_pointer = 0
+	program_pointer = 0
+
+
+func trim_program_begining() -> bool:
+	var hypothetical := copy()
+	hypothetical.reset_machine_states()
+
+	var modified_first_point := 0
+	while (hypothetical.interpret_step() and
+			hypothetical.tape.is_empty() and
+			not hypothetical.paused and
+			not hypothetical.exception_encountered
+			):
+		# the value of program_pointer will be right after
+		# the last character of the last interprited instruction when run
+		modified_first_point = hypothetical.program_pointer
+
+	if modified_first_point > 0:
+		program = program.substr(modified_first_point)
+		return true
+	return false
+
 
 ## Runs a [member program] on a optionally given [member tape] with a optional [method copy] of a given machine
 ## Returns an [Array] containing the [member output] of the machine, then the final [member tape] of the machine
@@ -228,9 +428,19 @@ static func run(program := "", tape := [], machine:BFMachine = null) -> Array:
 
 ## Runs a saved [member program] file on a optionally given [member tape] [Array] with a optional [method copy] of a given machine
 ## Returns an [Array] containing the [member output] of the machine, then the final [member tape] of the machine
-static func run_file(program_path:String, tape := [], machine:BFMachine = null) -> Array:
-	var program := FileAccess.open(program_path, FileAccess.READ).get_as_text(false)
-	return BFMachine.run(program, tape, machine)
+static func run_program_file(file:Variant, tape := [], machine:BFMachine = null) -> Array:
+	if machine == null:
+		machine = BFMachine.new()
+	else:
+		machine = machine.copy()
+
+	machine.program = ""
+	machine.load_program_file(file)
+	machine.tape = tape
+
+	machine.interpret()
+
+	return [machine.output, machine.tape]
 
 
 ## Initialises the machine with a optionally predefined [member program] and [member tape].

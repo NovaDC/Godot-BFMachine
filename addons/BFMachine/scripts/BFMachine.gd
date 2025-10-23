@@ -229,7 +229,7 @@ const BASE_BF_DIALECT := {
 # This will also ensure that provided [FileAccess] instances are always [method FileAccess.seek]ed
 # to the start of the file.
 # with errors form this process also being returned if this fails.
-static func _simple_open(ref: Variant) -> Variant:
+static func _simple_open(ref: Variant, writing := false) -> Variant:
 	if typeof(ref) == TYPE_OBJECT:
 		ref = ref as FileAccess
 		if ref == null:
@@ -240,12 +240,18 @@ static func _simple_open(ref: Variant) -> Variant:
 		ref.seek(0)
 		if ref.get_error() != OK:
 			return ref.get_error()
+		if writing:
+			# since we cant check the mode it was opened in, lets see if we can
+			# perform a writing operation that wouldn't effect the data in the file
+			ref.resize(ref.get_length())
+			if ref.get_error() != OK:
+				return ref.get_error()
 		return ref
 	if typeof(ref) in [TYPE_STRING, TYPE_STRING_NAME]:
 		if not FileAccess.file_exists(ref):
 			return ERR_FILE_NOT_FOUND
 
-		var fileobj = FileAccess.open(ref, FileAccess.READ)
+		var fileobj = FileAccess.open(ref, FileAccess.WRITE_READ if writing else FileAccess.READ)
 		if fileobj == null:
 			return FileAccess.get_open_error()
 		return fileobj
@@ -441,6 +447,50 @@ func load_program_file(file: Variant, skip_cr := false) -> int:
 		return file.get_error()
 
 	program = content
+	return OK
+
+## Saves the the current tape state as csv to a given [param file] (as text).
+## [param file] may be a [FileAccess] instance of an opened file,
+## or a [String] or [StringName] of a file path to open.
+## When [param file] is a [FileAccess] instance, it must be opened for writing.
+## [param delim] is a optional separator for each value in a row.
+## This cannot be set to an empty string.[br]
+## [param break_every] will make a new line in the csv file every [param break_every]
+## cells. When below or equal to zero, all cells will be on the same line/row.[br]
+## [param encode_str] is a callable used to customize how each numeric
+## value taken from the tape file will be parsed into string values
+## compatible with the csv format. This defaults to [method str],
+## and will likely not need to be changed unless you are using custom
+## types in the tape that arn't already compatible with the [method str] function.
+func save_tape_csv(file: Variant,
+					delim := ",",
+					break_every: int = 0,
+					encode_str: Callable = str
+					) -> int:
+	if delim.is_empty():
+		return ERR_INVALID_PARAMETER
+
+	var fileobj = _simple_open(file, true)
+	if typeof(fileobj) == TYPE_INT:
+		return fileobj
+	fileobj = fileobj as FileAccess
+
+	var count := 1
+	if break_every > 0:
+		count = ceili(tape.size() / break_every)
+
+	for li in range(count):
+		var line_size: int = tape.size()
+		if count > 1:
+			if li < count - 1:
+				line_size = floori(tape.size() / break_every)
+			else:
+				line_size = tape.size() % break_every
+		var start: int = li * count
+		var end: int = start + line_size
+		var packed := PackedStringArray(tape.slice(start, end).map(encode_str))
+		if not file.store_csv_line(packed, delim):
+			return file.get_error()
 	return OK
 
 ## Reset the active state of this machine, but [b]not[/b] the settings

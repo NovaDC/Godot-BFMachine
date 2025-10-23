@@ -6,9 +6,9 @@
 
 [sub_resource type="Resource" id="Resource_q17qp"]
 script = ExtResource("2_up13t")
-recursion_timeout_count_max = 255
+recursion_timeout_count_max = 65535
 
-[node name="BFInterpreter" type="VBoxContainer" node_paths=PackedStringArray("_program_box", "_tape_box", "_output_box", "_output_as_string_box", "_input_box", "_current_error_code", "_paused_check", "_finished_check", "_reset_button", "_reset_program_button", "_input_button", "_run_button", "_bypass_error_button")]
+[node name="BF Live Interpreter" type="VBoxContainer" node_paths=PackedStringArray("_program_box", "_tape_box", "_output_box", "_output_as_string_box", "_input_box", "_current_error_code", "_paused_check", "_finished_check", "_reset_button", "_reset_program_button", "_input_button", "_run_button", "_bypass_error_button", "_trim_program_button", "_save_program_button", "_load_program_button", "_program_path_box")]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -22,7 +22,7 @@ preset_program = "[
   All credit to the following code and it comments goes to that resource!
 ]
 
-[ 
+[
   This program prints \"Hello World!\" and a newline to the screen; its
   length is 106 active command characters. [It is not the shortest.]
 
@@ -68,62 +68,58 @@ Pointer :     ^
 >>+.                        Add 1 to Cell #5 gives us an exclamation point
 >++.                        And finally a newline from Cell #6"
 _current_machine = SubResource("Resource_q17qp")
-_program_box = NodePath("_VBC/_HBC/Program/Program")
-_tape_box = NodePath("_VBC/Outputs/Tape")
-_output_box = NodePath("_VBC/Outputs/Output")
-_output_as_string_box = NodePath("_VBC/Outputs/OutputString")
-_input_box = NodePath("_VBC/_HBC/States/Input/Input")
-_current_error_code = NodePath("_VBC/_HBC/States/Error/LatestErrorCode")
-_paused_check = NodePath("_VBC/_HBC/States/Paused")
-_finished_check = NodePath("_VBC/_HBC/States/Finished")
-_reset_button = NodePath("_VBC/_HBC/States/ResetButton")
-_reset_program_button = NodePath("_VBC/_HBC/States/ResetProgramButton")
-_input_button = NodePath("_VBC/_HBC/States/Input/InputButton")
-_run_button = NodePath("_VBC/_HBC/States/RunButton")
-_bypass_error_button = NodePath("_VBC/_HBC/States/Error/BypassErrorButton")
+_program_box = NodePath("_HSC/ProgramContainer/ProgramEditor")
+_tape_box = NodePath("OutputsContainer/_VBC/_VBC/TapeDisplay")
+_output_box = NodePath("OutputsContainer/_VBC/_HSC/OutputContainer/OutputDisplay")
+_output_as_string_box = NodePath("OutputsContainer/_VBC/_HSC/OutputStringContainer/OutputStringDisplay")
+_input_box = NodePath("_HSC/StateContainer/_VBC/InputContainer/InputBox")
+_current_error_code = NodePath("_HSC/StateContainer/_VBC/ErrorContainer/LatestErrorCodeBox")
+_paused_check = NodePath("_HSC/StateContainer/_VBC/_HBC/Paused")
+_finished_check = NodePath("_HSC/StateContainer/_VBC/_HBC/Finished")
+_reset_button = NodePath("_HSC/StateContainer/_VBC/ResetButton")
+_reset_program_button = NodePath("_HSC/StateContainer/_VBC/_FC/PanelContainer/VBoxContainer/ResetProgramButton")
+_input_button = NodePath("_HSC/StateContainer/_VBC/InputContainer/InputButton")
+_run_button = NodePath("_HSC/StateContainer/_VBC/RunButton")
+_bypass_error_button = NodePath("_HSC/StateContainer/_VBC/ErrorContainer/BypassErrorButton")
+_trim_program_button = NodePath("_HSC/StateContainer/_VBC/TrimProgramButton")
+_save_program_button = NodePath("_HSC/StateContainer/_VBC/_FC/PanelContainer/VBoxContainer/SaveProgram")
+_load_program_button = NodePath("_HSC/StateContainer/_VBC/_FC/PanelContainer/VBoxContainer/LoadProgram")
+_program_path_box = NodePath("_HSC/StateContainer/_VBC/_FC/PanelContainer/VBoxContainer/ProgramPath")
 
-[node name="Title" type="Label" parent="."]
-layout_mode = 2
-text = "BF Interpreter"
-label_settings = ExtResource("3_07a1q")
-horizontal_alignment = 1
-uppercase = true
-
-[node name="_HS" type="HSeparator" parent="."]
-layout_mode = 2
-
-[node name="_VBC" type="VBoxContainer" parent="."]
-custom_minimum_size = Vector2(0, 200)
-layout_mode = 2
-size_flags_vertical = 3
-
-[node name="_HBC" type="HBoxContainer" parent="_VBC"]
+[node name="_HSC" type="HSplitContainer" parent="."]
 layout_mode = 2
 size_flags_vertical = 3
 size_flags_stretch_ratio = 3.0
 
-[node name="Program" type="VBoxContainer" parent="_VBC/_HBC"]
+[node name="ProgramContainer" type="VBoxContainer" parent="_HSC"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 5.0
 
-[node name="_L1" type="Label" parent="_VBC/_HBC/Program"]
+[node name="_L1" type="Label" parent="_HSC/ProgramContainer"]
 layout_mode = 2
 size_flags_vertical = 0
 text = "Program:"
 label_settings = ExtResource("3_07a1q")
 
-[node name="Program" type="CodeEdit" parent="_VBC/_HBC/Program"]
-custom_minimum_size = Vector2(0, 30)
+[node name="ProgramEditor" type="CodeEdit" parent="_HSC/ProgramContainer"]
+custom_minimum_size = Vector2(0, 100)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
+tooltip_text = "The program to be run."
+focus_neighbor_left = NodePath("../../StateContainer/_VBC/RunButton")
+focus_neighbor_top = NodePath("../../../OutputsContainer/_VBC/_HSC/OutputContainer/OutputDisplay")
+focus_neighbor_right = NodePath("../../StateContainer/_VBC/RunButton")
+focus_neighbor_bottom = NodePath("../../../OutputsContainer/_VBC/_VBC/TapeDisplay")
+focus_next = NodePath("../../../OutputsContainer/_VBC/_VBC/TapeDisplay")
+focus_previous = NodePath("../../StateContainer/_VBC/_FC/PanelContainer/VBoxContainer/ResetProgramButton")
 text = "[
-  THE FOLLOWING IS FROM \"https://en.wikipedia.org/wiki/Brainfuck?useskin=vector#Hello_World!\"
+  THE FOLLOWING IS FROM \"https://en.wikipedia.org/wiki/Brainfuck#Hello_World!\"
   All credit to the following code and it comments goes to that resource!
 ]
 
-[ 
+[
   This program prints \"Hello World!\" and a newline to the screen; its
   length is 106 active command characters. [It is not the shortest.]
 
@@ -186,100 +182,249 @@ indent_automatic = true
 auto_brace_completion_enabled = true
 auto_brace_completion_highlight_matching = true
 
-[node name="_VS" type="VSeparator" parent="_VBC/_HBC"]
-layout_mode = 2
-
-[node name="States" type="VBoxContainer" parent="_VBC/_HBC"]
+[node name="StateContainer" type="ScrollContainer" parent="_HSC"]
 layout_mode = 2
 size_flags_horizontal = 3
+follow_focus = true
+draw_focus_border = true
+horizontal_scroll_mode = 0
+
+[node name="_VBC" type="VBoxContainer" parent="_HSC/StateContainer"]
+clip_contents = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
 alignment = 1
 
-[node name="Input" type="HBoxContainer" parent="_VBC/_HBC/States"]
+[node name="RunButton" type="Button" parent="_HSC/StateContainer/_VBC"]
+layout_mode = 2
+focus_neighbor_left = NodePath("../../../ProgramContainer/ProgramEditor")
+focus_neighbor_top = NodePath("../_FC/PanelContainer/VBoxContainer/ResetProgramButton")
+focus_neighbor_right = NodePath("../../../ProgramContainer/ProgramEditor")
+focus_neighbor_bottom = NodePath("../InputContainer/InputBox")
+focus_next = NodePath("../InputContainer/InputBox")
+focus_previous = NodePath("../../../../OutputsContainer/_VBC/_HSC/OutputStringContainer/OutputStringDisplay")
+text = "Run"
+
+[node name="_HS" type="HSeparator" parent="_HSC/StateContainer/_VBC"]
 layout_mode = 2
 
-[node name="_L5" type="Label" parent="_VBC/_HBC/States/Input"]
+[node name="InputContainer" type="HBoxContainer" parent="_HSC/StateContainer/_VBC"]
+layout_mode = 2
+
+[node name="_L5" type="Label" parent="_HSC/StateContainer/_VBC/InputContainer"]
 layout_mode = 2
 text = "Input: "
 label_settings = ExtResource("3_07a1q")
 
-[node name="Input" type="SpinBox" parent="_VBC/_HBC/States/Input"]
+[node name="InputBox" type="SpinBox" parent="_HSC/StateContainer/_VBC/InputContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 4.0
+tooltip_text = "The value to input. Only possible when the machine is paused."
+focus_neighbor_left = NodePath("../../../../ProgramContainer/ProgramEditor")
+focus_neighbor_top = NodePath("../../RunButton")
+focus_neighbor_right = NodePath("../InputButton")
+focus_neighbor_bottom = NodePath("../../ErrorContainer/LatestErrorCodeBox")
+focus_next = NodePath("../InputButton")
+focus_previous = NodePath("../../RunButton")
 editable = false
 select_all_on_focus = true
 
-[node name="InputButton" type="Button" parent="_VBC/_HBC/States/Input"]
+[node name="InputButton" type="Button" parent="_HSC/StateContainer/_VBC/InputContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
+tooltip_text = "Input the value."
+focus_neighbor_left = NodePath("../InputBox")
+focus_neighbor_top = NodePath("../../RunButton")
+focus_neighbor_right = NodePath("../../../../ProgramContainer/ProgramEditor")
+focus_neighbor_bottom = NodePath("../../ErrorContainer/BypassErrorButton")
+focus_next = NodePath("../../ErrorContainer/LatestErrorCodeBox")
+focus_previous = NodePath("../InputBox")
 disabled = true
 text = "Input"
 
-[node name="Error" type="HBoxContainer" parent="_VBC/_HBC/States"]
+[node name="ErrorContainer" type="HBoxContainer" parent="_HSC/StateContainer/_VBC"]
 layout_mode = 2
 
-[node name="_L6" type="Label" parent="_VBC/_HBC/States/Error"]
+[node name="_L6" type="Label" parent="_HSC/StateContainer/_VBC/ErrorContainer"]
 layout_mode = 2
 text = "Last Error:"
 label_settings = ExtResource("3_07a1q")
 
-[node name="LatestErrorCode" type="SpinBox" parent="_VBC/_HBC/States/Error"]
+[node name="LatestErrorCodeBox" type="SpinBox" parent="_HSC/StateContainer/_VBC/ErrorContainer"]
 layout_mode = 2
 size_flags_stretch_ratio = 4.0
+tooltip_text = "The last internal BF exception that was raised. 0 Is a non-error."
+focus_neighbor_left = NodePath("../../../../ProgramContainer/ProgramEditor")
+focus_neighbor_top = NodePath("../../InputContainer/InputBox")
+focus_neighbor_right = NodePath("../BypassErrorButton")
+focus_neighbor_bottom = NodePath("../../_HBC/Paused")
+focus_next = NodePath("../../_HBC/Paused")
+focus_previous = NodePath("../../InputContainer/InputButton")
 editable = false
 select_all_on_focus = true
 
-[node name="BypassErrorButton" type="Button" parent="_VBC/_HBC/States/Error"]
+[node name="BypassErrorButton" type="Button" parent="_HSC/StateContainer/_VBC/ErrorContainer"]
 layout_mode = 2
+tooltip_text = "Bypass the current error and attempt to continue to run. Doing this can likely result in undefined behaviour."
+focus_neighbor_left = NodePath("../LatestErrorCodeBox")
+focus_neighbor_top = NodePath("../../InputContainer/InputButton")
+focus_neighbor_right = NodePath("../../../../ProgramContainer/ProgramEditor")
+focus_neighbor_bottom = NodePath("../../_HBC/Paused")
+focus_next = NodePath("../../_HBC/Paused")
+focus_previous = NodePath("../LatestErrorCodeBox")
 disabled = true
 text = "Bypass Error"
 
-[node name="RunButton" type="Button" parent="_VBC/_HBC/States"]
+[node name="_HBC" type="HBoxContainer" parent="_HSC/StateContainer/_VBC"]
 layout_mode = 2
-text = "Run"
 
-[node name="Paused" type="CheckBox" parent="_VBC/_HBC/States"]
+[node name="Paused" type="CheckBox" parent="_HSC/StateContainer/_VBC/_HBC"]
 layout_mode = 2
+size_flags_horizontal = 3
+tooltip_text = "The machine's paused state."
+focus_neighbor_left = NodePath("../../../../ProgramContainer/ProgramEditor")
+focus_neighbor_top = NodePath("../../ErrorContainer/LatestErrorCodeBox")
+focus_neighbor_right = NodePath("../../ResetButton")
+focus_neighbor_bottom = NodePath("../../ResetButton")
+focus_next = NodePath("../../ResetButton")
+focus_previous = NodePath("../../ErrorContainer/BypassErrorButton")
 text = "Paused"
 icon_alignment = 1
 
-[node name="Finished" type="CheckBox" parent="_VBC/_HBC/States"]
+[node name="Finished" type="CheckBox" parent="_HSC/StateContainer/_VBC/_HBC"]
 layout_mode = 2
+size_flags_horizontal = 3
+tooltip_text = "The machine's finished state. This cannot be changed manually, the machine itself must be reset."
+focus_neighbor_left = NodePath("../../../../ProgramContainer/ProgramEditor")
+focus_neighbor_top = NodePath("../../ErrorContainer/BypassErrorButton")
+focus_neighbor_right = NodePath("../../../../ProgramContainer/ProgramEditor")
+focus_neighbor_bottom = NodePath("../../ResetButton")
+focus_next = NodePath("../../ResetButton")
+focus_previous = NodePath("../Paused")
 disabled = true
 text = "Finished"
 icon_alignment = 1
 
-[node name="ResetButton" type="Button" parent="_VBC/_HBC/States"]
+[node name="ResetButton" type="Button" parent="_HSC/StateContainer/_VBC"]
 layout_mode = 2
+tooltip_text = "Reset the state of the machine. This does not reset the program."
+focus_neighbor_left = NodePath("../../../ProgramContainer/ProgramEditor")
+focus_neighbor_top = NodePath("../_HBC/Paused")
+focus_neighbor_right = NodePath("../../../ProgramContainer/ProgramEditor")
+focus_neighbor_bottom = NodePath("../TrimProgramButton")
+focus_next = NodePath("../TrimProgramButton")
+focus_previous = NodePath("../_HBC/Paused")
 disabled = true
 text = "Reset State"
 
-[node name="ResetProgramButton" type="Button" parent="_VBC/_HBC/States"]
-layout_mode = 2
-text = "Reset Program"
-
-[node name="TrimProgram" type="Button" parent="_VBC/_HBC/States"]
-layout_mode = 2
-text = "Trim Program"
-
-[node name="_HS" type="HSeparator" parent="_VBC"]
+[node name="_HS2" type="HSeparator" parent="_HSC/StateContainer/_VBC"]
 layout_mode = 2
 
-[node name="Outputs" type="VBoxContainer" parent="_VBC"]
-custom_minimum_size = Vector2(0, 100)
+[node name="TrimProgramButton" type="Button" parent="_HSC/StateContainer/_VBC"]
+layout_mode = 2
+tooltip_text = "Trim the begining of the program that would have no possible effect on operation. Note that this is only a rough, safe method of culling unnecessary operations, not a through optimization."
+focus_neighbor_left = NodePath("../../../ProgramContainer/ProgramEditor")
+focus_neighbor_top = NodePath("../ResetButton")
+focus_neighbor_right = NodePath("../../../ProgramContainer/ProgramEditor")
+focus_neighbor_bottom = NodePath("../_FC/PanelContainer/VBoxContainer/ProgramPath")
+focus_next = NodePath("../_FC/PanelContainer/VBoxContainer/ProgramPath")
+focus_previous = NodePath("../ResetButton")
+text = "Trim Program Beginning"
+
+[node name="_FC" type="FoldableContainer" parent="_HSC/StateContainer/_VBC"]
+layout_mode = 2
+folded = true
+title = "Loading Tools..."
+title_alignment = 1
+title_text_overrun_behavior = 3
+
+[node name="PanelContainer" type="PanelContainer" parent="_HSC/StateContainer/_VBC/_FC"]
+visible = false
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="_HSC/StateContainer/_VBC/_FC/PanelContainer"]
+layout_mode = 2
+
+[node name="ProgramPath" type="LineEdit" parent="_HSC/StateContainer/_VBC/_FC/PanelContainer/VBoxContainer"]
+layout_mode = 2
+tooltip_text = "The path of the program file (tipically *.bf) to save to or load from."
+focus_neighbor_left = NodePath("../../../../../../ProgramContainer/ProgramEditor")
+focus_neighbor_top = NodePath("../../../../TrimProgramButton")
+focus_neighbor_right = NodePath("../../../../../../ProgramContainer/ProgramEditor")
+focus_neighbor_bottom = NodePath("../SaveProgram")
+focus_next = NodePath("../SaveProgram")
+focus_previous = NodePath("../../../../TrimProgramButton")
+placeholder_text = "Program File Path..."
+
+[node name="SaveProgram" type="Button" parent="_HSC/StateContainer/_VBC/_FC/PanelContainer/VBoxContainer"]
+layout_mode = 2
+tooltip_text = "Save the current BF program to the path provided above."
+focus_neighbor_left = NodePath("../../../../../../ProgramContainer/ProgramEditor")
+focus_neighbor_top = NodePath("../ProgramPath")
+focus_neighbor_right = NodePath("../../../../../../ProgramContainer/ProgramEditor")
+focus_neighbor_bottom = NodePath("../LoadProgram")
+focus_next = NodePath("../LoadProgram")
+focus_previous = NodePath("../ProgramPath")
+text = "Save Program"
+
+[node name="LoadProgram" type="Button" parent="_HSC/StateContainer/_VBC/_FC/PanelContainer/VBoxContainer"]
+layout_mode = 2
+tooltip_text = "Load the a BF program from the path provided above."
+focus_neighbor_left = NodePath("../../../../../../ProgramContainer/ProgramEditor")
+focus_neighbor_top = NodePath("../SaveProgram")
+focus_neighbor_right = NodePath("../../../../../../ProgramContainer/ProgramEditor")
+focus_neighbor_bottom = NodePath("../ResetProgramButton")
+focus_next = NodePath("../ResetProgramButton")
+focus_previous = NodePath("../SaveProgram")
+text = "Load Program"
+
+[node name="ResetProgramButton" type="Button" parent="_HSC/StateContainer/_VBC/_FC/PanelContainer/VBoxContainer"]
+layout_mode = 2
+tooltip_text = "Reset the current program to the default example program."
+focus_neighbor_left = NodePath("../../../../../../ProgramContainer/ProgramEditor")
+focus_neighbor_top = NodePath("../LoadProgram")
+focus_neighbor_right = NodePath("../../../../../../ProgramContainer/ProgramEditor")
+focus_neighbor_bottom = NodePath("../../../../../../../OutputsContainer/_VBC/_VBC/TapeDisplay")
+focus_next = NodePath("../../../../../../ProgramContainer/ProgramEditor")
+focus_previous = NodePath("../LoadProgram")
+text = "Load Default Program"
+
+[node name="_HS2" type="HSeparator" parent="."]
+layout_mode = 2
+
+[node name="OutputsContainer" type="FoldableContainer" parent="."]
+layout_mode = 2
+folded = true
+title = "Tape and Outputs..."
+title_alignment = 1
+title_text_overrun_behavior = 3
+
+[node name="_VBC" type="VBoxContainer" parent="OutputsContainer"]
+visible = false
+layout_mode = 2
+
+[node name="_VBC" type="VBoxContainer" parent="OutputsContainer/_VBC"]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="_L2" type="Label" parent="_VBC/Outputs"]
+[node name="_L2" type="Label" parent="OutputsContainer/_VBC/_VBC"]
 layout_mode = 2
 size_flags_vertical = 0
 text = "Tape:"
 label_settings = ExtResource("3_07a1q")
 
-[node name="Tape" type="LineEdit" parent="_VBC/Outputs"]
-custom_minimum_size = Vector2(0, 30)
+[node name="TapeDisplay" type="LineEdit" parent="OutputsContainer/_VBC/_VBC"]
 layout_mode = 2
 size_flags_vertical = 3
+tooltip_text = "The current internal state of the machine's tape."
+focus_neighbor_left = NodePath("../../_HSC/OutputStringContainer/OutputStringDisplay")
+focus_neighbor_top = NodePath("../../../../_HSC/ProgramContainer/ProgramEditor")
+focus_neighbor_right = NodePath("../../_HSC/OutputContainer/OutputDisplay")
+focus_neighbor_bottom = NodePath("../../_HSC/OutputContainer/OutputDisplay")
+focus_next = NodePath("../../_HSC/OutputContainer/OutputDisplay")
+focus_previous = NodePath("../../../../_HSC/ProgramContainer/ProgramEditor")
 text = "[]"
 editable = false
 virtual_keyboard_enabled = false
@@ -287,16 +432,30 @@ shortcut_keys_enabled = false
 middle_mouse_paste_enabled = false
 select_all_on_focus = true
 
-[node name="_L3" type="Label" parent="_VBC/Outputs"]
+[node name="_HSC" type="HSplitContainer" parent="OutputsContainer/_VBC"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="OutputContainer" type="VBoxContainer" parent="OutputsContainer/_VBC/_HSC"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="_L3" type="Label" parent="OutputsContainer/_VBC/_HSC/OutputContainer"]
 layout_mode = 2
 size_flags_vertical = 0
 text = "Direct Output:"
 label_settings = ExtResource("3_07a1q")
 
-[node name="Output" type="LineEdit" parent="_VBC/Outputs"]
-custom_minimum_size = Vector2(0, 30)
+[node name="OutputDisplay" type="LineEdit" parent="OutputsContainer/_VBC/_HSC/OutputContainer"]
 layout_mode = 2
 size_flags_vertical = 3
+tooltip_text = "The machine's output buffer. Each output instruction appends an entry to this tape."
+focus_neighbor_left = NodePath("../../OutputStringContainer/OutputStringDisplay")
+focus_neighbor_top = NodePath(".")
+focus_neighbor_right = NodePath("../../OutputStringContainer/OutputStringDisplay")
+focus_neighbor_bottom = NodePath("../../../../../_HSC/ProgramContainer/ProgramEditor")
+focus_next = NodePath("../../OutputStringContainer/OutputStringDisplay")
+focus_previous = NodePath("../../../_VBC/TapeDisplay")
 text = "[]"
 editable = false
 virtual_keyboard_enabled = false
@@ -304,16 +463,26 @@ shortcut_keys_enabled = false
 middle_mouse_paste_enabled = false
 select_all_on_focus = true
 
-[node name="_L4" type="Label" parent="_VBC/Outputs"]
+[node name="OutputStringContainer" type="VBoxContainer" parent="OutputsContainer/_VBC/_HSC"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="_L4" type="Label" parent="OutputsContainer/_VBC/_HSC/OutputStringContainer"]
 layout_mode = 2
 size_flags_vertical = 0
 text = "String Output:"
 label_settings = ExtResource("3_07a1q")
 
-[node name="OutputString" type="LineEdit" parent="_VBC/Outputs"]
-custom_minimum_size = Vector2(0, 30)
+[node name="OutputStringDisplay" type="LineEdit" parent="OutputsContainer/_VBC/_HSC/OutputStringContainer"]
 layout_mode = 2
 size_flags_vertical = 3
+tooltip_text = "The machine's output interpreted as a utf8 encoded string, if possible."
+focus_neighbor_left = NodePath("../../OutputContainer/OutputDisplay")
+focus_neighbor_top = NodePath("../../../_VBC/TapeDisplay")
+focus_neighbor_right = NodePath("../../OutputContainer/OutputDisplay")
+focus_neighbor_bottom = NodePath("../../../../../_HSC/ProgramContainer/ProgramEditor")
+focus_next = NodePath("../../../../../_HSC/StateContainer/_VBC/RunButton")
+focus_previous = NodePath("../../OutputContainer/OutputDisplay")
 editable = false
 virtual_keyboard_enabled = false
 shortcut_keys_enabled = false

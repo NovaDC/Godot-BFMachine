@@ -1,10 +1,10 @@
 [gd_scene load_steps=5 format=3 uid="uid://pi2okcs0hc1k"]
 
-[ext_resource type="Script" uid="uid://bibd3q0nc1mcd" path="res://addons/BFMachine/interpreter/BFInterpreter.gd" id="1_plq06"]
-[ext_resource type="Script" uid="uid://c8j4hwsk27ia8" path="res://addons/BFMachine/scripts/BFMachine.gd" id="2_up13t"]
-[ext_resource type="LabelSettings" uid="uid://ciovlbc20jjl6" path="res://addons/BFMachine/interpreter/labelsettings.tres" id="3_07a1q"]
+[ext_resource type="Script" uid="uid://bibd3q0nc1mcd" path="res://addons/bf_machine/bf_interpreter.gd" id="1_plq06"]
+[ext_resource type="Script" uid="uid://c8j4hwsk27ia8" path="res://addons/bf_machine/bf_machine.gd" id="2_up13t"]
+[ext_resource type="LabelSettings" uid="uid://ciovlbc20jjl6" path="res://addons/bf_machine/label_settings.tres" id="3_07a1q"]
 
-[sub_resource type="Resource" id="Resource_q17qp"]
+[sub_resource type="Resource" id="Resource_tegxx"]
 script = ExtResource("2_up13t")
 recursion_timeout_count_max = 65535
 
@@ -67,7 +67,7 @@ Pointer :     ^
 +++.------.--------.     Cell #3 for 'rl' and 'd'
 >>+.                        Add 1 to Cell #5 gives us an exclamation point
 >++.                        And finally a newline from Cell #6"
-_current_machine = SubResource("Resource_q17qp")
+_current_machine = SubResource("Resource_tegxx")
 _program_box = NodePath("_HSC/ProgramContainer/ProgramEditor")
 _tape_box = NodePath("OutputsContainer/_VBC/_VBC/TapeDisplay")
 _output_box = NodePath("OutputsContainer/_VBC/_HSC/OutputContainer/OutputDisplay")

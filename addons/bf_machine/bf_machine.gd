@@ -1,5 +1,5 @@
 @tool
-@icon("./BFMachine.svg")
+@icon("./bf_machine.svg")
 class_name BFMachine
 extends Resource
 

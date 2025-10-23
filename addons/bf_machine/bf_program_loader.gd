@@ -1,5 +1,5 @@
 @tool
-@icon("res://addons/BFMachine/assets/BFMachine.svg")
+@icon("./bf_machine.svg")
 class_name BFProgramLoader
 extends EditorImportPlugin
 

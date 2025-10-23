@@ -1,15 +1,15 @@
 @tool
-@icon("res://addons/BFMachine/assets/BFMachine.svg")
+@icon("./bf_machine.svg")
 extends EditorPlugin
 
-const PLUGIN_NAME := "BFMachine"
+const PLUGIN_NAME := "bf_machine"
 
-const PLUGIN_ICON := preload("res://addons/BFMachine/assets/BFMachine.svg")
+const PLUGIN_ICON := preload("./bf_machine.svg")
 
-const INTERPRETER_SCENE = preload("res://addons/BFMachine/interpreter/BFInterpreter.tscn")
+const INTERPRETER_SCENE = preload("./bf_interpreter.tscn")
 
 const ENSURE_SCRIPT_DOCS: Array[Script] = [
-	preload("res://addons/BFMachine/scripts/BFMachine.gd"),
+	preload("./bf_machine.gd"),
 ]
 
 var _interpreter: BFInterpreter = null

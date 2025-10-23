@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://ipx4dh2lpwfu"
-path="res://.godot/imported/Screenshot.png-4041fbd5caf1794319b3e76676513bf0.ctex"
+uid="uid://cnq1xwtr5drjf"
+path="res://.godot/imported/bf_machine.svg-f6a4a31db8f1aa1068f09e955fb3bf2a.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Screenshot.png"
-dest_files=["res://.godot/imported/Screenshot.png-4041fbd5caf1794319b3e76676513bf0.ctex"]
+source_file="res://addons/bf_machine/bf_machine.svg"
+dest_files=["res://.godot/imported/bf_machine.svg-f6a4a31db8f1aa1068f09e955fb3bf2a.ctex"]
 
 [params]
 
@@ -38,3 +38,6 @@ process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
 detect_3d/compress_to=1
+svg/scale=1.0
+editor/scale_with_editor_scale=false
+editor/convert_colors_with_editor_theme=false

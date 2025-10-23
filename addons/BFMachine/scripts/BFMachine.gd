@@ -1,12 +1,25 @@
 @tool
-@icon("res://addons/BFMachine/assets/BFMachine.svg")
-extends Resource
+@icon("./BFMachine.svg")
 class_name BFMachine
+extends Resource
 
 ## [BFMachine] is a simple BF interpreter.
 ## It is a single file [Resource] that holds the entire state of the machine inside it,
 ## and a single scene that gives that [BFInterpreter] a ui, so it can run in editor.
 ## Its also flexible, allowing for you to change settings on the fly, if you so choose.
+
+#region Signals
+## Emitted when an [member output] is made.
+signal program_outputted()
+## Emitted when the [member program] begins to wait for [method input].
+signal awaiting_input()
+## Emitted when the [member program] is [member finished].
+signal program_finished()
+## Emitted when there is a [member exception_encountered].
+signal encountered_exception()
+## Emitted every step the [member program] makes.
+signal stepped()
+#endregion Signals
 
 #region Constants
 ## Enumeration defining BF opcodes, used for [member dialect] definitions.
@@ -32,12 +45,19 @@ enum BFOpcodes {
 	## This loop must be enclosed in a SLOOP at the beginning and a ELOOP at the end.
 	ELOOP,
 
-	## [b]A semi standard instruction.[/b] This will print out the current cells value to godot directly, instead of sending events like the [OUTPUT] opcode
+	## [b]A semi standard instruction.[/b]
+	## This was a instruction originally included with the first BF interpreter,
+	## though this itself is not commonly considered to be necessary.
+	## This will print out the current cells value to godot directly,
+	## instead of sending events and setting the output flags
+	## how the [constant BFOpcodes.OUTPUT] opcode does.
 	DEBUG,
-	## [b]A non standard instruction.[/b] This will prematurely end the program
-	## when run.
+	## [b]A non standard instruction.[/b]
+	## This will prematurely end the program when run,
+	## as if it encountered the end of the program.
 	HALT,
-	## [b]A non standard instruction.[/b] This will raise an assertion [enum BFErrors].
+	## [b]A non standard instruction.[/b]
+	## This will raise a [enum BFErrors.INSTRUCTED_FAILURE] error.
 	FAIL,
 }
 
@@ -60,29 +80,16 @@ enum BFErrors {
 
 ## The official [member dialect] mapping of the language
 const BASE_BF_DIALECT := {
-	BFOpcodes.TRIGHT : ">",
-	BFOpcodes.TLEFT : "<",
-	BFOpcodes.INC : "+",
-	BFOpcodes.DEC : "-",
-	BFOpcodes.OUT : ".",
-	BFOpcodes.IN : ",",
-	BFOpcodes.SLOOP : "[",
-	BFOpcodes.ELOOP : "]"
+	BFOpcodes.TRIGHT: ">",
+	BFOpcodes.TLEFT: "<",
+	BFOpcodes.INC: "+",
+	BFOpcodes.DEC: "-",
+	BFOpcodes.OUT: ".",
+	BFOpcodes.IN: ",",
+	BFOpcodes.SLOOP: "[",
+	BFOpcodes.ELOOP: "]",
 }
 #endregion Constants
-
-#region Signals
-## Emitted when an [member output] is made.
-signal program_outputted
-## Emitted when the [member program] begins to wait for [method input].
-signal awaiting_input
-## Emitted when the [member program] is [member finished].
-signal program_finished
-## Emitted when there is a [member exception_encountered].
-signal encountered_exception
-## Emitted every step the [member program] makes.
-signal stepped
-#endregion Signals
 
 #region Settings
 ## Exported variables for controlling machine settings.
@@ -97,22 +104,24 @@ signal stepped
 ## The full string of the program being run.
 @export var program := ""
 ## The initial value of a cell on the [member tape].
-## Note: A cell on the [member tape] is only first made when the [member tape_pointer] first points to it
+## Note: A cell on the [member tape] is only first made when the
+## [member tape_pointer] first points to it
 ## (and only if the [member tape_pointer] is not exceeding the [member tape_length_max]
 ## when its larger than -1 and not [member wrap_cell_pointer]).
-@export var cell_default_value:= 0
+@export var cell_default_value: int = 0
 ## The maximum [member tape] length.
 ## If the value is negative, the [member tape] will be infinite.
-## Note: A cell on the [member tape] is only first made when the [member tape_pointer] first points to it
+## Note: A cell on the [member tape] is only first made when the
+## [member tape_pointer] first points to it
 ## (and only if the [member tape_pointer] is not exceeding the [member tape_length_max]
 ## when its larger than -1 and not [member wrap_cell_pointer]).
-@export var tape_length_max:int = -1
+@export var tape_length_max: int = -1
 ## If true, the [member tape_pointer] going past the max or min cell
 ## will result in the [member tape_pointer] wrapping around to the start,
 ## otherwise a [constant TAPE_POINTER_OUT_OF_RANGE] BF error will be thrown
 ## when the [member tape_pointer] exceeds the tape length.
 @export var wrap_cell_pointer := true
-## The amount of cells to print (boht before and after) the current cell when debuging.
+## The amount of cells to print (both before and after) the current cell when debuging.
 @export var debug_print_cell_count := 3
 #region Output
 ## Settings related the machine's output.
@@ -143,7 +152,8 @@ signal stepped
 ## Exported variables for maintaining the machine's state.
 @export_group("State")
 ## This holds the value of the tape.
-## Note: A cell on the [member tape] is only first made when the [member tape_pointer] first points to it
+## Note: A cell on the [member tape] is only first made when the
+## [member tape_pointer] first points to it.
 ## (and only if the [member tape_pointer] is not exceeding the [member tape_length_max]
 ## when its larger than -1 and not [member wrap_cell_pointer]).
 @export var tape := []
@@ -162,16 +172,18 @@ signal stepped
 @export_subgroup("Output")
 ## The output of the [member program].
 @export var output := []
-## Gets and sets the [member output] as a UTF8 formatted [String], taking each [int] in the [member output] as a byte.
-@export var output_as_string:String:
+## Gets and sets the [member output] as a UTF8 formatted [String],
+## truncating each value into an [int],
+## then using each to lookup an associated unicode value.
+@export var output_as_string: String:
 	get:
-		var _return_string = ""
-		for _char in output:
-			_return_string += String.chr(_char)
-		return _return_string
+		var return_string := ""
+		for char in output:
+			return_string += String.chr(int(char))
+		return return_string
 	set(value):
 		output = value.to_ascii_buffer()
-## All the halting reated flags.
+## All the halting related flags.
 @export_subgroup("Halting States")
 ## True when the [member program] is finished.
 ## It is advised against modifying this.
@@ -197,14 +209,17 @@ signal stepped
 		tape_pointer = value
 		if tape_length_max >= 0 and tape_pointer > tape_length_max:
 			if wrap_cell_pointer:
-				tape_pointer = wrapi(tape_pointer, 0, tape_length_max+1) # Wrap the tape pointer around if it goes out of range
+				# Wrap the tape pointer around if it goes out of range
+				tape_pointer = wrapi(tape_pointer, 0, tape_length_max + 1)
 			else:
-				raise_BF_error(BFErrors.TAPE_POINTER_OUT_OF_RANGE) # Raise exception if tape pointer goes out of range
+				# Raise exception if tape pointer goes out of range
+				raise_bf_error(BFErrors.TAPE_POINTER_OUT_OF_RANGE)
 				return
-		while tape_pointer >= tape.size():
+		# cant happen when the tape is read only, sas this can result in resource loading errors
+		while (not tape.is_read_only()) and tape_pointer >= tape.size():
 			tape.append(cell_default_value) # Extend the tape if tape pointer exceeds tape size
 ## The position the [member program] was currently being read from.
-## This position corlated to the current charater in the [member program]'s [String].
+## This position correlated to the current charater in the [member program]'s [String].
 @export var program_pointer := 0
 #endregion Pointers
 #endregion State
@@ -232,15 +247,26 @@ static func _simple_open(ref: Variant) -> Variant:
 
 		var fileobj = FileAccess.open(ref, FileAccess.READ)
 		if fileobj == null:
-			if Engine.get_singleton("FileAccess").has_method("get_open_error"):
-				return Engine.get_singleton("FileAccess").call("get_open_error")
-			if fileobj.get_error() != OK:
-				return fileobj.get_error()
-			return FAILED
+			return FileAccess.get_open_error()
 		return fileobj
-
-
 	return ERR_INVALID_PARAMETER
+
+## Loads a given [param file] as a csv file.
+## [param file] may be a [FileAccess] instance of an opened file,
+## or a [String] or [StringName] of a file path to open.
+## Each row of data is concatenated to the last,
+## with the range of rows being selected controlled by [param line_index_start]
+## and [param line_index_end], both allowing for negative values to corelate to a
+## offset relative to the total amount of lines in the file (just like how many other slice method
+## work for arrays).
+## [param delim] is a optional separator for each value in a row. When set to an empty string,
+## each row will be taken entirely.[br]
+## [param decode_str] is a callable used to customize how each string value taken from the csv file
+## will be parsed into the numeric values compatible with [member tape].
+## This defaults to [method str_to_var],
+## the default godot method for converting [String]s into [Variant] values. When overriding this,
+## [param decode_str] must be a [Callable] that accepts one provided paramiter
+## and returns the numeric value to be inserted into the [member tape].
 func load_tape_csv_file(file: Variant,
 						delim := ",",
 						line_index_start: int = 0,
@@ -285,6 +311,10 @@ func load_tape_csv_file(file: Variant,
 	tape = Array(loaded).map(decode_str)
 	return OK
 
+## Loads a given [param file] as a sequence of bytes.
+## The remaining arguments match that of [method load_tape_raw_bytes].
+## [param file] may be a [FileAccess] instance of an opened file,
+## or a [String] or [StringName] of a file path to open.
 func load_tape_binary_file(file: Variant,
 							bit_size: int = 0,
 							floating := false,
@@ -300,13 +330,40 @@ func load_tape_binary_file(file: Variant,
 	# [FileAccess] doesn't have getting methods that decern signed and unsigned
 	# int types for every int size
 	# unlike a PackedByteArray, so lets just pass the files content through
-	var bin:PackedByteArray = fileobj.get_buffer(fileobj.get_length())
+	var bin: PackedByteArray = fileobj.get_buffer(fileobj.get_length())
 	if fileobj.get_error() != OK:
 		return fileobj.get_error()
 
 	return load_tape_raw_bytes(bin, bit_size, floating, signed, start_index, end_index)
 
-
+## Loads a given sequence of [param bytes] into the [member tape].
+## by default, this will load the [param bytes] exactly as they are represented in a
+## [PackedByteArray] (as [int]s ranging form 0 to 255);
+## however, this function also has options that allow for parsing these bytes
+## into other formats of numbers.
+## [param bit_size] is the amount of bits long a parsed [int] or [float] should be.
+## When set to [code]0[/code], this indicates that the bit size should match that of the integers
+## returned when getting or iterating from [PackedByteArray].
+## This will return an error if negative.[br]
+## [param floating], when set, means that the given bytes are parsed os floating point numbers
+## instead of integers. Since the bf language only has integer operations, this is usually trivial,
+## however, this is still available in case the read data may be of use
+## to the user in some other way.[br]
+## [param signed], when set, indicates that parsed [int]s are signed
+## (ie. they my be other positive or negative).
+## If set alog side [param floating], this will always result in an error,
+## as [float]s must always be signed.[br]
+## [param start_index] and [param end_index] will enabling a [method PackedByteArray.slice]-like
+## behaviour for the bytes that will be read.
+## Note that parsing the same sequence of bytes with a different type of setting will likely result
+## in a different sequence of numbers
+## being parsed, as the means of storing signed integers, unsigned integers, and floating numbers
+## re inherently different at the byte to byte level,
+## so it critical that the user know what type of integer was stored in the given [param bytes]
+## before parsing.[br]
+## When godot does not provide a method for parsing numbers with a given [param bit_size],
+## [param signed] form, or [param floating] form;
+## then the [constant ERR_PARAMETER_RANGE_ERROR] is returned.
 func load_tape_raw_bytes(bytes: PackedByteArray,
 							bit_size: int = 0,
 							floating := false,
@@ -320,10 +377,11 @@ func load_tape_raw_bytes(bytes: PackedByteArray,
 		# godot (an most engines) don't support unsigned floats
 		return ERR_METHOD_NOT_FOUND
 
-	var method_name:StringName = ""
+	var method_name: StringName = ""
 	if bit_size < 0:
 		return ERR_PARAMETER_RANGE_ERROR
-	elif bit_size == 0:
+
+	if bit_size == 0:
 		method_name = "decode_real" if floating else "get"
 	else:
 		if not floating:
@@ -348,10 +406,10 @@ func load_tape_raw_bytes(bytes: PackedByteArray,
 	if method_name.is_empty():
 		return ERR_METHOD_NOT_FOUND
 
-	var offset:int = 0
+	var offset: int = 0
 	var method := Callable.create(bytes, method_name)
 
-	var byte_size:int = maxi(floori(bit_size/8), 1)
+	var byte_size: int = maxi(floori(bit_size / 8), 1)
 
 	if bytes.size() % byte_size != 0:
 		return ERR_PARAMETER_RANGE_ERROR
@@ -363,21 +421,32 @@ func load_tape_raw_bytes(bytes: PackedByteArray,
 
 	return OK
 
+## Loads a program from a [param file] (as text).
+## [param file] may be a [FileAccess] instance of an opened file,
+## or a [String] or [StringName] of a file path to open.
+## [param skip_cr], when true, will strip out the [code]/r[/code] whitespace characters from
+## the read file. [code]/r[/code] whitespaces, unless needed for a particular non-standard dialect,
+## will have no effect on the parsing of a program,
+## and will likely only ever appear on files made on a
+## windows system. Enabling this may slightly speed up the parsing of large, multiline programs,
+## with this otherwise being trivial. If in doubt, leave this disabled.
 func load_program_file(file: Variant, skip_cr := false) -> int:
 	file = _simple_open(file)
 	if typeof(file) == TYPE_INT:
 		return file
 	file = file as FileAccess
 
-	var content:String = file.get_as_text(skip_cr)
+	var content: String = file.get_as_text(skip_cr)
 	if file.get_error() != OK:
 		return file.get_error()
 
 	program = content
 	return OK
 
-
-func reset_machine_states():
+## Reset the active state of this machine, but [b]not[/b] the settings
+## (ex. the tape, the paused flag, the last encountered exception, [b]not[/b] the program, etc...).
+## This effectively resets the machine back to its inital state before running the program.
+func reset_machine_states() -> void:
 	tape = []
 	last_exception_encountered = BFErrors.NON_ERROR
 	loop_level = 0
@@ -389,16 +458,21 @@ func reset_machine_states():
 	tape_pointer = 0
 	program_pointer = 0
 
-
+## Trim this machine's program to the first instruction that has an effect on the tape.
+## Note this will include all output instructions that might effect the output buffer
+## but not any input instructions or any instruction that
+## immediately leads to a (internal bf) exception.
+## returns weather or not the program was trimmed at all.
 func trim_program_begining() -> bool:
 	var hypothetical := copy()
 	hypothetical.reset_machine_states()
 
+	var inital_tape_pointer: int = hypothetical.tape_pointer
+
 	var modified_first_point := 0
-	while (hypothetical.interpret_step() and
-			hypothetical.tape.is_empty() and
-			not hypothetical.paused and
-			not hypothetical.exception_encountered
+	while (not hypothetical.interpret_step() and
+			hypothetical.tape_pointer == inital_tape_pointer and
+			hypothetical.tape.count(hypothetical.cell_default_value) == hypothetical.tape.size()
 			):
 		# the value of program_pointer will be right after
 		# the last character of the last interprited instruction when run
@@ -409,26 +483,28 @@ func trim_program_begining() -> bool:
 		return true
 	return false
 
-
-## Runs a [member program] on a optionally given [member tape] with a optional [method copy] of a given machine
-## Returns an [Array] containing the [member output] of the machine, then the final [member tape] of the machine
-static func run(program := "", tape := [], machine:BFMachine = null) -> Array:
+## Runs a [member program] on a optionally given [member tape] with a optional [method copy]
+## of a given machine.
+## Returns an [Array] containing the [member output] of the machine,
+## then the final [member tape] of the machine; in that order.
+static func run(program := "", tape := [], machine: BFMachine = null) -> Array:
 	if machine == null:
 		machine = BFMachine.new()
 	else:
 		machine = machine.copy()
-	
+
 	machine.program = program
 	machine.tape = tape
-	
+
 	machine.interpret()
-	
+
 	return [machine.output, machine.tape]
 
-
-## Runs a saved [member program] file on a optionally given [member tape] [Array] with a optional [method copy] of a given machine
-## Returns an [Array] containing the [member output] of the machine, then the final [member tape] of the machine
-static func run_program_file(file:Variant, tape := [], machine:BFMachine = null) -> Array:
+## Runs a saved [member program] file on a optionally given [member tape]
+## [Array] with a optional [method copy] of a given machine
+## Returns an [Array] containing the [member output] of the machine,
+## then the final [member tape] of the machine
+static func run_program_file(file: Variant, tape := [], machine: BFMachine = null) -> Array:
 	if machine == null:
 		machine = BFMachine.new()
 	else:
@@ -442,12 +518,10 @@ static func run_program_file(file:Variant, tape := [], machine:BFMachine = null)
 
 	return [machine.output, machine.tape]
 
-
 ## Initialises the machine with a optionally predefined [member program] and [member tape].
-func _init(program := "", tape := []):
-	program = program
-	tape = tape
-
+func _init(inital_program := "", inital_tape: Array = []) -> void:
+	program = inital_program
+	tape = inital_tape
 
 ## Returns a deep copy of the machine.
 func copy() -> BFMachine:
@@ -473,25 +547,22 @@ func copy() -> BFMachine:
 	machine.exception_encountered = self.exception_encountered
 	machine.tape_pointer = self.tape_pointer
 	machine.program_pointer = self.program_pointer
-	
-	return machine
 
+	return machine
 
 ## Used to input into the machine.
 ## Note: This will always unpause the machine.
-func input(in_value:int):
+func input(in_value: int) -> void:
 	tape[tape_pointer] = in_value
 	paused = false
 
-
 ## Used to raise a BF error.
-func raise_BF_error(error:BFErrors):
+func raise_bf_error(error: BFErrors) -> void:
 	encountered_exception.emit()
 	exception_encountered = true
 	if exceptions_in_engine:
-		assert(false, "BF error %s encountered!" % [error])  # If exceptions in engine, assert an error
+		assert(false, "BF error %s encountered!" % [error]) # If exceptions in engine, assert an error
 	last_exception_encountered = error
-
 
 ## Used to fetch the current pointed instruction in the machine's [member program].
 func pointed_instruction() -> BFOpcodes:
@@ -500,34 +571,34 @@ func pointed_instruction() -> BFOpcodes:
 			return k
 	return BFOpcodes.NOP
 
-
 ## Used to move the [member program_pointer] to the next instruction in the [member program].
 ## This will not regard any bounds of the [member program], nor will raise any exceptions.
-func inc_instruction():
+func inc_instruction() -> void:
 	var ins = pointed_instruction()
 	program_pointer += dialect[ins].length() if ins != BFOpcodes.NOP else 1
 
 ## Used to move the [member program_pointer] to the previous instruction in the [member program].
 ## This will not regard any bounds of the [member program], nor will raise any exceptions.
-func dec_instruction():
+func dec_instruction() -> void:
 	program_pointer -= 1
 	while pointed_instruction() == BFOpcodes.NOP and program_pointer >= 0:
 		program_pointer -= 1
 
 ## Executes a single instruction on the machine,
 ## optionally with it also stepping the [member program_pointer].
-## [param step_pointer] will be ignored for any instruction that may modify the [member program_pointer] manually.
+## [param step_pointer] will be ignored for any instruction
+## that may modify the [member program_pointer] manually.
 ## (excluding nop instructions).
-func interpret_instruction(opcode:BFOpcodes, step_pointer := false):
+func interpret_instruction(opcode: BFOpcodes, step_pointer := false) -> void:
 	if tape.size() <= 0:
 		tape = [cell_default_value]
 
-	match(opcode):
+	match (opcode):
 		BFOpcodes.HALT:
 			finish()
 			if step_pointer: inc_instruction()
 		BFOpcodes.FAIL:
-			raise_BF_error(BFErrors.INSTRUCTED_FAILURE)
+			raise_bf_error(BFErrors.INSTRUCTED_FAILURE)
 			if step_pointer: inc_instruction()
 		BFOpcodes.DEBUG:
 			print(tape[tape_pointer])
@@ -545,41 +616,41 @@ func interpret_instruction(opcode:BFOpcodes, step_pointer := false):
 			tape[tape_pointer] -= 1
 			if step_pointer: inc_instruction()
 		BFOpcodes.SLOOP:
-			if tape[tape_pointer] == 0: #ignore this loop
+			if tape[tape_pointer] == 0: # ignore this loop
 				inc_instruction()
 				program_pointer -= 1
-				
+
 				var loop_counter = 1
 				while loop_counter > 0:
 					program_pointer += 1
 					if exception_on_unclosed_loop and program_pointer >= program.length():
-						raise_BF_error(BFErrors.UNCLOSED_LOOP)
+						raise_bf_error(BFErrors.UNCLOSED_LOOP)
 					elif pointed_instruction() == BFOpcodes.SLOOP:
 						loop_counter += 1
 					elif pointed_instruction() == BFOpcodes.ELOOP:
 						loop_counter -= 1
 				program_pointer += dialect[BFOpcodes.ELOOP].length()
-			else: #enter this loop
+			else: # enter this loop
 				loop_level += 1
 				if exception_on_infinite_loop:
 					var next_instruction_pointer = program_pointer + dialect[BFOpcodes.SLOOP].length()
 					if next_instruction_pointer < program.length():
 						if pointed_instruction() == BFOpcodes.ELOOP:
-							raise_BF_error(BFErrors.INFINITE_LOOP)
+							raise_bf_error(BFErrors.INFINITE_LOOP)
 				program_pointer += dialect[BFOpcodes.SLOOP].length()
 		BFOpcodes.ELOOP:
-			if tape[tape_pointer] != 0: #continue this loop
+			if tape[tape_pointer] != 0: # continue this loop
 				var loop_counter = 1
 				while loop_counter > 0:
 					program_pointer -= 1
 					if exception_on_unclosed_loop and program_pointer < 0:
-						raise_BF_error(BFErrors.UNCLOSED_LOOP)
+						raise_bf_error(BFErrors.UNCLOSED_LOOP)
 					elif pointed_instruction() == BFOpcodes.SLOOP:
 						loop_counter -= 1
 					elif pointed_instruction() == BFOpcodes.ELOOP:
 						loop_counter += 1
 				program_pointer += dialect[BFOpcodes.SLOOP].length()
-			else: #exit this loop
+			else: # exit this loop
 				loop_level -= 1
 				program_pointer += dialect[BFOpcodes.ELOOP].length()
 		BFOpcodes.OUT:
@@ -600,11 +671,15 @@ func interpret_instruction(opcode:BFOpcodes, step_pointer := false):
 	if loop_level > 0:
 		recursion_timeout_count += 1
 		if recursion_timeout_count_max >= 0 and recursion_timeout_count >= recursion_timeout_count_max:
-			raise_BF_error(BFErrors.RECURSION_TIMEOUT)
+			raise_bf_error(BFErrors.RECURSION_TIMEOUT)
 	else:
 		recursion_timeout_count = 0
 
-func finish():
+## Sets the machine state to a state of completion, both emitting the proper signals and
+## setting the appropriate flags.
+## This does not effect the exception states or the tape pointer,
+## as the tape pointer may itself call this if necessary.
+func finish() -> void:
 	finished = true
 	program_finished.emit()
 
@@ -613,22 +688,20 @@ func finish():
 func interpret_step() -> bool:
 	if exception_encountered or paused or finished:
 		return true
-	
+
 	interpret_instruction(pointed_instruction(), true)
-	stepped.emit() #Emit the stepped signal after each program step
-	
+	stepped.emit() # Emit the stepped signal after each program step
+
 	if program_pointer >= program.length() and not exception_encountered:
 		finish()
 		return true
-	
-	return exception_encountered or paused
 
+	return exception_encountered or paused
 
 ## Steps through the [member program] until it halts, for whatever reason.
 ## Returns true if the program is [member finished]
 ## (specifically [member finished] and not any other form of halt).
 func interpret() -> bool:
-	while (program_pointer >= 0 and program_pointer < program.length()) and not (interpret_step()):
+	while (program_pointer >= 0 and program_pointer < program.length()) and not interpret_step():
 		pass
-	
 	return finished

@@ -1,45 +1,14 @@
 [gd_scene load_steps=5 format=3 uid="uid://pi2okcs0hc1k"]
 
-[ext_resource type="Script" path="res://addons/BFMachine/interpreter/BFInterpreter.gd" id="1_plq06"]
-[ext_resource type="Script" path="res://addons/BFMachine/scripts/BFMachine.gd" id="2_up13t"]
+[ext_resource type="Script" uid="uid://bibd3q0nc1mcd" path="res://addons/BFMachine/interpreter/BFInterpreter.gd" id="1_plq06"]
+[ext_resource type="Script" uid="uid://c8j4hwsk27ia8" path="res://addons/BFMachine/scripts/BFMachine.gd" id="2_up13t"]
 [ext_resource type="LabelSettings" uid="uid://ciovlbc20jjl6" path="res://addons/BFMachine/interpreter/labelsettings.tres" id="3_07a1q"]
 
-[sub_resource type="Resource" id="Resource_qcw7f"]
+[sub_resource type="Resource" id="Resource_q17qp"]
 script = ExtResource("2_up13t")
-dialect = {
-0: ">",
-1: "<",
-2: "+",
-3: "-",
-4: ".",
-5: ",",
-6: "[",
-7: "]"
-}
-program = ""
-cell_default_value = 0
-tape_length_max = -1
-wrap_cell_pointer = true
-pause_on_output = false
-clear_previous_output = false
-exceptions_in_engine = true
-exception_on_unclosed_loop = true
-exception_on_infinite_loop = true
-recursion_timeout_count_max = 65535
-tape = []
-last_exception_encountered = 0
-loop_level = 0
-recursion_timeout_count = 0
-output = []
-output_as_string = ""
-finished = false
-paused = false
-exception_encountered = false
-tape_pointer = 0
-program_pointer = 0
+recursion_timeout_count_max = 255
 
 [node name="BFInterpreter" type="VBoxContainer" node_paths=PackedStringArray("_program_box", "_tape_box", "_output_box", "_output_as_string_box", "_input_box", "_current_error_code", "_paused_check", "_finished_check", "_reset_button", "_reset_program_button", "_input_button", "_run_button", "_bypass_error_button")]
-custom_minimum_size = Vector2(0, 200)
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -49,7 +18,7 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 script = ExtResource("1_plq06")
 preset_program = "[
-  THE FOLLOWING IS FROM \"https://en.wikipedia.org/wiki/Brainfuck?useskin=vector#Hello_World!\"
+  THE FOLLOWING IS FROM \"https://en.wikipedia.org/wiki/Brainfuck#Hello_World!\"
   All credit to the following code and it comments goes to that resource!
 ]
 
@@ -98,7 +67,7 @@ Pointer :     ^
 +++.------.--------.     Cell #3 for 'rl' and 'd'
 >>+.                        Add 1 to Cell #5 gives us an exclamation point
 >++.                        And finally a newline from Cell #6"
-_current_machine = SubResource("Resource_qcw7f")
+_current_machine = SubResource("Resource_q17qp")
 _program_box = NodePath("_VBC/_HBC/Program/Program")
 _tape_box = NodePath("_VBC/Outputs/Tape")
 _output_box = NodePath("_VBC/Outputs/Output")
@@ -288,6 +257,10 @@ text = "Reset State"
 [node name="ResetProgramButton" type="Button" parent="_VBC/_HBC/States"]
 layout_mode = 2
 text = "Reset Program"
+
+[node name="TrimProgram" type="Button" parent="_VBC/_HBC/States"]
+layout_mode = 2
+text = "Trim Program"
 
 [node name="_HS" type="HSeparator" parent="_VBC"]
 layout_mode = 2

@@ -73,7 +73,9 @@ func _import(source_file: String,
                 bfm.program_pointer = 0
             "program_pointer" when options.get("trim_begining", false):
                 if options["program_pointer"] != 0:
-                    push_error("Cannot set the program pointer to anything other than the start when trimming program.")
+                    const MSG := ("Cannot set the program pointer to anything other than " +
+                                "the start when trimming program.")
+                    push_error(MSG)
                     return ERR_INVALID_PARAMETER
             "program":
                 push_warning("Cannot set program as an option when loading BF program from a file.")

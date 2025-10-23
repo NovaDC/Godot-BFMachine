@@ -2,40 +2,61 @@
 @icon("res://addons/BFMachine/assets/BFMachine.svg")
 extends EditorPlugin
 
-const INTERPRETER_SCENE_REF = preload("res://addons/BFMachine/interpreter/BFInterpreter.tscn")
-var current_interpreter: BFInterpreter = null
-var is_added: bool = false
-var loader: BFProgramLoader = null
+const PLUGIN_NAME := "BFMachine"
 
-func add_control():
-	if not is_added:
-		add_control_to_bottom_panel(current_interpreter, "BF Interpreter")
-		is_added = true
-	if loader == null:
-		loader = BFProgramLoader.new()
-		add_import_plugin(loader)
+const PLUGIN_ICON := preload("res://addons/BFMachine/assets/BFMachine.svg")
 
-func remove_control():
-	if is_added:
-		remove_control_from_bottom_panel(current_interpreter)
-		is_added = false
-	if loader != null:
-		remove_import_plugin(loader)
-		loader = null
+const INTERPRETER_SCENE = preload("res://addons/BFMachine/interpreter/BFInterpreter.tscn")
 
-func _enter_tree():
-	if current_interpreter == null:
-		current_interpreter = INTERPRETER_SCENE_REF.instantiate()
-	add_control()
+const ENSURE_SCRIPT_DOCS: Array[Script] = [
+	preload("res://addons/BFMachine/scripts/BFMachine.gd"),
+]
 
-func _enable_plugin():
-	add_control()
+var _interpreter: BFInterpreter = null
+var _loader: BFProgramLoader = null
 
-func _disable_plugin():
-	remove_control()
+# Every once ands a while the script docs simply refuse to update properly.
+# This nudges the docs into a ensuring that the important scripts added by
+# this addon are actually loaded.
+func _ensure_script_docs():
+	var edit := get_editor_interface().get_script_editor()
+	for scr in ENSURE_SCRIPT_DOCS:
+		edit.update_docs_from_script(scr)
 
-func _exit_tree():
-	remove_control()
-	if current_interpreter != null:
-		current_interpreter.queue_free()
-		current_interpreter = null
+func _enter_tree() -> void:
+	_ensure_script_docs()
+	if EditorInterface.is_plugin_enabled(PLUGIN_NAME):
+		_init_plugin()
+
+func _exit_tree() -> void:
+	_deinit_plugin()
+
+func _enable_plugin() -> void:
+	_ensure_script_docs()
+	_init_plugin()
+
+func _disable_plugin() -> void:
+	_deinit_plugin()
+
+func _get_plugin_name() -> String:
+	return PLUGIN_NAME
+
+func _get_plugin_icon() -> Texture2D:
+	return PLUGIN_ICON
+
+func _init_plugin() -> void:
+	if _interpreter == null and INTERPRETER_SCENE != null:
+		_interpreter = INTERPRETER_SCENE.instantiate()
+		add_control_to_bottom_panel(_interpreter, _interpreter.name)
+	if _loader == null:
+		_loader = BFProgramLoader.new()
+		add_import_plugin(_loader)
+
+func _deinit_plugin() -> void:
+	if _interpreter != null:
+		remove_control_from_bottom_panel(_interpreter)
+		_interpreter.queue_free()
+		_interpreter = null
+	if _loader != null:
+		remove_import_plugin(_loader)
+		_loader = null

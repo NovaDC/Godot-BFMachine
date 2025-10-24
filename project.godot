@@ -10,14 +10,20 @@ config_version=5
 
 [application]
 
-config/name="BF"
+config/name="Godot-BFMachine"
+config/description="BFMachine is a simple BF interpreter for Godot 4.
+It is a single file Resource that holds the entire state of the machine inside it,
+and a single scene that gives that interpreter a ui, so it can run in editor.
+Its also flexible, allowing for you to change settings on the fly, if you so choose."
 config/tags=PackedStringArray("inprogress", "tool")
 run/main_scene="res://addons/bf_machine/bf_interpreter.tscn"
 config/features=PackedStringArray("4.5", "GL Compatibility")
+boot_splash/image="uid://btfvmys1jj0sk"
+config/icon="uid://btfvmys1jj0sk"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/BFMachine/plugin.cfg")
+enabled=PackedStringArray("res://addons/bf_machine/plugin.cfg")
 
 [rendering]
 

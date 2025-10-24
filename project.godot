@@ -15,6 +15,7 @@ config/description="BFMachine is a simple BF interpreter for Godot 4.
 It is a single file Resource that holds the entire state of the machine inside it,
 and a single scene that gives that interpreter a ui, so it can run in editor.
 Its also flexible, allowing for you to change settings on the fly, if you so choose."
+config/version="v1.1.0.0"
 config/tags=PackedStringArray("inprogress", "tool")
 run/main_scene="res://addons/bf_machine/bf_interpreter.tscn"
 config/features=PackedStringArray("4.5", "GL Compatibility")
